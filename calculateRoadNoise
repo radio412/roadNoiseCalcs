@@ -1,0 +1,64 @@
+/*Refactored code 
+Based on NPL Acoustics http://resource.npl.co.uk/acoustics/techguides/crtn/
+The base calculation is a ROUGH ESTIMATE of the DoT's Calculation of Road Traffic Noise (CRTN - ISBN 0 11 550847 3) 1988
+Does not contain calcs for propegation, layout or corrections. This is just for calculating base noise level
+*/
+calcBaseLevelRoadNoise = function (timeBase, estimated, upHill, vehicleFlow, vehicleSpeed, heavyVehiclePercent, gradient, timeBase, roadSurface ){	var Dprime = 30
+	var Q, G, P, V, DeltaV;
+	var SpeedHVCorr, BaseLevel, GradientCorr, SurfaceCorr;
+	var tempa, tempb, tempc, tempd;
+	
+	Q = vehicleFlow;
+	if ((Q < 50) && (timeBase == 1) || (Q < 1000) && (timeBase == 18)){
+		alert("flow data out of range");
+	}
+	
+	V = vehicleSpeed;
+	
+	P = heavyVehiclePercent;
+	if(P>100||P<0){
+		alert("heavy vehicle percent data out of range");
+	}
+	
+	G = gradient;
+	if (G>100||G<0){
+		alert("gradient data out of range");
+	}
+	
+	if (timeBase==1){//Hour Flows
+		BaseLevel = 42.2 + 10 * Log10(Q);
+	}else{//18 hour
+		BaseLevel = 29.1 + 10 * Log10(Q);
+	}
+
+	
+	if ((estimated == true) && (upHill == true)){
+        DeltaV = (0.73 + ((2.3 - ((1.15 * P) / 100)) * (P / 100))) * G;
+		V = V - DeltaV;
+	}
+
+	if (upHill == true){
+		GradientCorr = 0.3 * G;
+	}else{
+		GradientCorr = 0;
+	}
+	
+    SpeedHVCorr = 33 * Log10(V+40+500/V) + 10 * Log10(1+5*P/V) - 68.8;
+
+	//CRTN Section 16
+	SurfaceCorr = 0;
+
+	if(roadSurface == "impervious"){
+		if (V < 75){
+			SurfaceCorr = -1;
+		}
+	}
+	if(roadSurface == "pervious"){
+		SurfaceCorr = -3.5;
+	}
+	BaseLevel = roundto(BaseLevel,1);
+	SpeedHVCorr = roundto(SpeedHVCorr,1);
+	GradientCorr = roundto(GradientCorr,1);
+	SurfaceCorr = roundto(SurfaceCorr,1);
+	return roundto((BaseLevel + SpeedHVCorr + GradientCorr + SurfaceCorr),1);
+}
